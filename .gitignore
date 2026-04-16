@@ -3,4 +3,3 @@ dist/
 .env
 *.tsbuildinfo
 .cache/
-searxng-data/
