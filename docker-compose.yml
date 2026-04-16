@@ -1,0 +1,56 @@
+# SearXNG Search MCP - Docker Compose
+# Run: docker compose up -d
+# Includes SearXNG + Tor proxy for IP rotation (optional)
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng-mcp
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng-data:/etc/searxng:Z
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+      - SEARXNG_PORT=8080
+      - SEARXNG_BIND_ADDRESS=0.0.0.0
+      - SEARXNG_LIMITER=false
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    networks:
+      - searxng-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: Tor SOCKS5 proxy for IP rotation
+  # Uncomment to enable. Then update searxng-data/settings.yml:
+  #   outgoing:
+  #     proxies:
+  #       all://:
+  #         - socks5h://tor-proxy:9050
+  #     using_tor_proxy: true
+  #     extra_proxy_timeout: 10
+  #
+  # tor-proxy:
+  #   image: dperson/torproxy:latest
+  #   container_name: searxng-tor
+  #   restart: unless-stopped
+  #   networks:
+  #     - searxng-net
+  #   healthcheck:
+  #     test: ["CMD", "curl", "--socks5", "localhost:9050", "https://check.torproject.org/api/ip"]
+  #     interval: 60s
+  #     timeout: 10s
+  #     retries: 3
+
+networks:
+  searxng-net:
+    driver: bridge

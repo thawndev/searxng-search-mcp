@@ -1,0 +1,35 @@
+{
+  "name": "searxng-search-mcp",
+  "version": "4.0.0",
+  "description": "Neural-powered search MCP server for AI development workflows — zero-shot query classification and semantic reranking via SearXNG metasearch",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "searxng-search-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "searxng",
+    "search",
+    "grounded-search",
+    "retrieval-augmented",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@huggingface/transformers": "^4.1.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cheerio": "^1.2.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.2"
+  }
+}
