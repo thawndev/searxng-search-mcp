@@ -16,6 +16,10 @@ export interface SearXNGRawResult {
   thumbnail_src?: string;
   template?: string;
   positions?: number[];
+  // Image search fields
+  resolution?: string;
+  img_format?: string;
+  source?: string;
 }
 
 export interface SearXNGInfobox {

@@ -118,7 +118,7 @@ function setCachedEmbedding(text: string, vector: number[]): void {
 // ─── Core Embedding Functions ───
 
 /** Embed multiple texts in one batch. Returns one vector per text. */
-async function embedTexts(texts: string[]): Promise<number[][]> {
+export async function embedTexts(texts: string[]): Promise<number[][]> {
   const model = await getModel();
 
   // Check cache — find which texts need embedding

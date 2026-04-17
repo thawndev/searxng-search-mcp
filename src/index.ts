@@ -42,7 +42,7 @@ async function main() {
   console.error(`[searxng-search-mcp] Starting...`);
   console.error(`[searxng-search-mcp] SearXNG: ${config.searxngUrl}`);
   console.error(`[searxng-search-mcp] Config: timeout=${config.requestTimeout}ms cache=${config.cacheTtl}ms concurrent=${config.maxConcurrentRequests} retries=${config.retry.maxRetries}`);
-  console.error(`[searxng-search-mcp] Tools: search, get_diagnostics`);
+  console.error(`[searxng-search-mcp] Tools: search, ui_inspire, get_diagnostics`);
 
   await server.connect(transport);
   console.error(`[searxng-search-mcp] Connected and ready.`);

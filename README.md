@@ -9,6 +9,7 @@ Designed for [GitHub Copilot CLI](https://docs.github.com/en/copilot), [Claude C
 ## Features
 
 - **One tool, all capabilities** — search, fetch pages, verify claims, deep research
+- **UI inspiration engine** — design search across Dribbble, Behance, Figma with image thumbnails for LLM vision analysis
 - **Neural query understanding** — zero-shot embedding classification, no hardcoded patterns
 - **Semantic reranking** — Reciprocal Rank Fusion combines keyword, embedding, and consensus signals
 - **Cross-validated results** — 50+ engines with deduplication and multi-engine corroboration
@@ -134,6 +135,56 @@ Structured markdown optimized for LLM consumption:
 **Follow-up searches:** suggestion1 | suggestion2
 ```
 
+## The `ui_inspire` Tool
+
+A dedicated UI/UX design inspiration engine that searches across Dribbble, Behance, Figma, Pinterest, and 10+ image engines, returning curated design references with optional thumbnail images that vision-capable LLMs can directly analyze.
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `query` | string | — | Design intent: "mobile banking app dashboard dark theme" |
+| `style` | string | — | Visual style: `minimal`, `glassmorphism`, `neomorphism`, `material`, etc. |
+| `platform` | `mobile\|web\|tablet\|desktop` | — | Target platform filter |
+| `components` | string[] | — | Focus components: `["login form", "navigation", "cards"]` |
+| `max_images` | number (1-6) | 3 | Images to return. Keep low for token efficiency. |
+| `mode` | `thumbnails\|links_only\|inspect` | `thumbnails` | Output mode (see below) |
+| `framework` | string | — | Also search code examples: `"react-native nativewind"` |
+| `safesearch` | 0\|1\|2 | 1 | Safe search level |
+
+### Modes
+
+- **`thumbnails`** (default) — Returns metadata + 2-3 thumbnail images as base64. Vision-capable LLMs can analyze layouts, components, and patterns directly from the images.
+- **`links_only`** — Returns metadata and source URLs only. Fastest, no image downloads.
+- **`inspect`** — Returns 1 higher-resolution image for detailed component analysis.
+
+### Design-Aware Ranking
+
+Results are ranked with UI-specific intelligence:
+
+- **Domain reputation** — Dribbble, Behance, Figma, Awwwards boosted; stock photo sites deprioritized
+- **Semantic similarity** — Image titles/descriptions matched against your design intent via embeddings
+- **Resolution quality** — Screen-like resolutions (200K-8M pixels) preferred over tiny icons or oversized posters
+- **Content filtering** — Mockup bundles, wallpapers, stock photos, and logos penalized
+- **Multi-engine consensus** — Images found by multiple engines ranked higher
+
+### Output Format
+
+```
+**UI Inspiration** | thumbnails mode | 10 designs found | bing images, pinterest, duckduckgo images | 3200ms
+
+### Design References
+[1] **Banking App Dashboard** — dribbble.com [1200×900] — relevance: 0.92
+    Source: https://dribbble.com/shots/...
+    Image: https://cdn.dribbble.com/...
+
+[IMAGE: banking-app-dashboard.jpg, 18KB]
+
+### Code References (if framework specified)
+- **React Native banking UI** — github.com
+  https://github.com/...
+```
+
 ## How It Works
 
 ### Neural Query Classification
@@ -255,7 +306,7 @@ The embedding model loads on first use (~1.6s). Subsequent queries use cached em
 ```
 ┌─────────────────────────────────────────────┐
 │              MCP Client (LLM)               │
-│         "search" tool (unified)             │
+│   "search" + "ui_inspire" + diagnostics     │
 └────────────────────┬────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────┐
@@ -281,6 +332,10 @@ The embedding model loads on first use (~1.6s). Subsequent queries use cached em
 │  │ (multi-  │ │ (LRU +   │ │ (adaptive   │ │
 │  │  step)   │ │  TTL)    │ │  weights)   │ │
 │  └──────────┘ └──────────┘ └─────────────┘ │
+│  ┌──────────────────────────────────────┐   │
+│  │ UI Inspire Engine (image search,    │   │
+│  │  design ranking, thumbnail fetch)   │   │
+│  └──────────────────────────────────────┘   │
 └────────────────────┬────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────┐

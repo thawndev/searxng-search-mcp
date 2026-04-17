@@ -7,6 +7,7 @@ import { SearXNGClient } from "./searxng-client.js";
 import { unifiedSearch, formatOutput } from "./unified-search.js";
 import { searchCache, fetchCache, verifyCache } from "./cache.js";
 import { getEmbeddingStats } from "./embeddings.js";
+import { uiInspire, formatUIInspireOutput, imageCache } from "./ui-inspire.js";
 
 export function createServer(config: ServerConfig): McpServer {
   const server = new McpServer({
@@ -143,10 +144,88 @@ TIPS:
         cache_search: searchCache.stats,
         cache_fetch: fetchCache.stats,
         cache_verify: verifyCache.stats,
+        cache_images: imageCache.stats,
       };
       return {
         content: [{ type: "text" as const, text: JSON.stringify(stats, null, 2) }],
       };
+    },
+  );
+
+  // ─── UI Inspiration Engine ───
+  server.tool(
+    "ui_inspire",
+    `Search for UI/UX design inspiration using SearXNG image search across Dribbble, Behance, Pinterest, Unsplash, and 10+ image engines. Returns curated design references with optional image thumbnails that vision-capable LLMs can directly analyze.
+
+USE THIS FOR:
+- Finding UI design inspiration for screens, layouts, or components
+- Exploring design patterns (login flows, dashboards, onboarding, settings)
+- Discovering visual styles (glassmorphism, neomorphism, minimal, material)
+- Getting real design references before building UI components
+- Combining visual inspiration with code examples for implementation
+
+HOW IT WORKS:
+1. Your design intent is expanded into optimized image search queries
+2. Images are gathered from design-focused engines (Dribbble, Behance, Pinterest, etc.)
+3. Results are ranked by design relevance: domain reputation + semantic similarity + resolution quality
+4. Top images are fetched as thumbnails and returned as viewable image content
+5. Optionally includes code references for the requested framework
+
+MODES:
+- "thumbnails" (default): Returns 2-3 thumbnail images + metadata — best for quick inspiration
+- "links_only": Returns only metadata and URLs — no image downloads, fastest
+- "inspect": Returns 1 high-resolution image for detailed analysis
+
+TIPS:
+- Be specific: "mobile banking app dashboard dark theme" > "app design"
+- Use 'platform' to filter: "mobile", "web", "tablet", "desktop"
+- Use 'style' for aesthetic direction: "glassmorphism", "minimal", "brutalist"
+- Use 'components' to focus: ["navigation bar", "card grid", "hero section"]
+- Add 'framework' to get code references alongside: "react-native tailwindcss"`,
+    {
+      query: z.string().describe("Design intent or UI search query. Be specific about the screen type, style, and purpose."),
+      style: z.string().optional().describe("Visual style filter: 'minimal', 'glassmorphism', 'neomorphism', 'material', 'flat', 'brutalist', 'skeuomorphic', etc."),
+      platform: z.enum(["mobile", "web", "tablet", "desktop"]).optional().describe("Target platform to filter results."),
+      components: z.array(z.string()).optional().describe("Specific UI components to focus on: ['login form', 'navigation', 'cards', 'hero section']"),
+      max_images: z.number().min(1).max(6).optional().describe("Number of images to return (default: 3). Keep low for token efficiency."),
+      mode: z.enum(["thumbnails", "links_only", "inspect"]).optional().describe(
+        "Output mode. 'thumbnails' (default): small preview images. 'links_only': metadata only, no downloads. 'inspect': 1 high-res image for detailed analysis."
+      ),
+      framework: z.string().optional().describe("If provided, also searches for code examples in this framework (e.g., 'react-native tailwindcss', 'nextjs', 'flutter')."),
+      safesearch: z.number().min(0).max(2).optional().describe("Safe search level: 0=off, 1=moderate (default), 2=strict."),
+    },
+    async (args) => {
+      try {
+        const result = await uiInspire(
+          {
+            query: args.query,
+            style: args.style,
+            platform: args.platform as any,
+            components: args.components,
+            max_images: args.max_images,
+            mode: args.mode as any,
+            framework: args.framework,
+            safesearch: args.safesearch as any,
+          },
+          client,
+          config,
+        );
+
+        const formatted = formatUIInspireOutput(result);
+        return {
+          content: formatted.map(block => {
+            if (block.type === "image") {
+              return { type: "image" as const, data: block.data!, mimeType: block.mimeType! };
+            }
+            return { type: "text" as const, text: block.text! };
+          }),
+        };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text" as const, text: `UI inspiration search error: ${msg}` }],
+        };
+      }
     },
   );
 
